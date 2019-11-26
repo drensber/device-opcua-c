@@ -424,7 +424,9 @@ static opcua_connection *create_opcua_connection(opcua_driver *uadr,
   sprintf(endpoint, "%s%s:%"PRIu64"%s", PROTOCOL, address, port, path);
 
   /* create the client */
-  UA_ClientConfig config = UA_ClientConfig_default;
+  client = UA_Client_new();
+  UA_ClientConfig *cc = UA_Client_getConfig(client);
+  UA_ClientConfig_setDefault(cc);
   /*
    * Need to attach driver to clientContext to allow us to retrieve the
    * structure during stateCallback.
@@ -433,10 +435,9 @@ static opcua_connection *create_opcua_connection(opcua_driver *uadr,
   client_context *context = (void *)malloc(sizeof(client_context));
   context->driver = (void *)uadr;
   context->devname = devname;
-  config.clientContext = (void *)context;
+  cc->clientContext = (void *)context;
   /* Set stateCallback, where subscriptions will be set up */
-  config.stateCallback = stateCallback;
-  client = UA_Client_new(config);
+  cc->stateCallback = stateCallback;  
   if (client == NULL)
   {
     iot_log_error(uadr->lc, "Failed to create client");
@@ -867,7 +868,7 @@ static bool ua_connection_status(ua_conn_addr_status *connecting,
     !ua_is_connecting(connecting, conn->addr_id))
   {
     add_ua_connecting(connecting, conn->addr_id);
-    iot_log_warning(driver->lc, "Connection id: %s is malfunctioning. Status: "
+    iot_log_warn(driver->lc, "Connection id: %s is malfunctioning. Status: "
                                  "%d", conn->addr_id, retval);
 
     /* If the session is not active attempt to re-connect */
@@ -894,7 +895,7 @@ static bool ua_connection_status(ua_conn_addr_status *connecting,
   }
   else if (ua_is_connecting(connecting, conn->addr_id))
   {
-    iot_log_warning(driver->lc,
+    iot_log_warn(driver->lc,
       "A reconnect attempt is already being made for id %s", conn->addr_id);
     return false;
   }
@@ -968,12 +969,12 @@ static bool opcua_get_handler(void *impl, const char *devname,
   /* Test the resulting connection, NULL if we failed to create it  */
   if (!conn)
   {
-    iot_log_warning(driver->lc, "Failed to connect to endpoint: %s", devname);
+    iot_log_warn(driver->lc, "Failed to connect to endpoint: %s", devname);
     return false;
   }
   else if (conn->client == NULL)
   {
-    iot_log_warning(driver->lc, "Failed to connect to endpoint: %s", devname);
+    iot_log_warn(driver->lc, "Failed to connect to endpoint: %s", devname);
     free(conn->addr_id);
     free(conn->endpoint);
     free(conn);
@@ -998,7 +999,7 @@ static bool opcua_get_handler(void *impl, const char *devname,
         pthread_mutex_unlock(&conn->mutex);
         if (retval != UA_STATUSCODE_GOOD)
         {
-          iot_log_warning(driver->lc,
+          iot_log_warn(driver->lc,
                            "Failed to read from OPC-UA server. Status Code: %s",
                            UA_StatusCode_name(retval));
           UA_Variant_delete(value);
@@ -1051,12 +1052,12 @@ static bool opcua_put_handler(void *impl, const char *devname,
   /* Test the resulting connection, NULL if we failed to create it */
   if (!conn)
   {
-    iot_log_warning(driver->lc, "Failed to connect to endpoint: %s", devname);
+    iot_log_warn(driver->lc, "Failed to connect to endpoint: %s", devname);
     return false;
   }
   else if (conn->client == NULL)
   {
-    iot_log_warning(driver->lc, "Failed to connect to endpoint: %s", devname);
+    iot_log_warn(driver->lc, "Failed to connect to endpoint: %s", devname);
     free(conn->addr_id);
     free(conn->endpoint);
     free(conn);
@@ -1080,7 +1081,7 @@ static bool opcua_put_handler(void *impl, const char *devname,
         pthread_mutex_unlock(&conn->mutex);
         if (retval != UA_STATUSCODE_GOOD)
         {
-          iot_log_warning(driver->lc, "OPCUA Write Failed. Status Code: %s",
+          iot_log_warn(driver->lc, "OPCUA Write Failed. Status Code: %s",
                            UA_StatusCode_name(retval));
           UA_Variant_delete(value);
           return false;
@@ -1270,7 +1271,7 @@ int main(int argc, char *argv[])
         UA_StatusCode retval = UA_Client_getState(current->client);
         if (retval >= UA_CLIENTSTATE_SESSION)
         {
-          UA_Client_runAsync(current->client, 500);
+          UA_Client_run_iterate(current->client, 500);
         }
         pthread_mutex_unlock(&current->mutex);
         if (current->next != NULL)

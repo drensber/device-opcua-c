@@ -19,7 +19,7 @@ then
   # get c-sdk from edgexfoundry
   git clone https://github.com/edgexfoundry/device-sdk-c.git
   cd device-sdk-c
-  git checkout v1.0.2
+  git checkout v1.1.0
   ./scripts/build.sh
   cp -rf include/* /usr/include/
   cp build/debug/c/libcsdk.so /usr/lib/
