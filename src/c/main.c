@@ -1189,42 +1189,33 @@ int main(int argc, char *argv[])
           "  \\___/|_|  \\___|   \\___/_/ \\_\\ |___/\\___|\\_/|_\\__\\___| |___/\\___|_|  \\_/|_\\__\\___|\n\n");
 
   fflush(stdout);
-  char *profile = "";
-  char *confdir = "";
-  char *service_name = "device-opcua";
-  char *regURL = getenv("EDGEX_REGISTRY");
+  edgex_device_svcparams params = { "device-opcua", NULL, NULL, NULL, false };
   opcua_driver *impl = malloc(sizeof (opcua_driver));
   memset(impl, 0, sizeof(opcua_driver));
+
+  if (!edgex_device_service_processparams (&argc, argv, &params))
+  {
+    free(impl);
+    return  0;
+  }
 
   int n = 1;
   while (n < argc)
   {
     if (strcmp(argv[n], "-h") == 0 || strcmp(argv[n], "--help") == 0)
     {
+      printf ("Options:\n");
+      printf ("  -h, --help\t\t: Show this text\n");
+      edgex_device_service_usage ();
+      free(impl);
+      return 0;
+    }
+    else {
+      printf("Unknown option %s\n", argv[n]);
       usage();
       free(impl);
       return 0;
     }
-    if (testArg(argc, argv, &n, "-r", "--registry", &regURL))
-    {
-      continue;
-    }
-    if (testArg(argc, argv, &n, "-n", "--name", &service_name))
-    {
-      continue;
-    }
-    if (testArg(argc, argv, &n, "-p", "--profile", &profile))
-    {
-      continue;
-    }
-    if (testArg(argc, argv, &n, "-c", "--confdir", &confdir))
-    {
-      continue;
-    }
-    printf("Unknown option %s\n", argv[n]);
-    usage();
-    free(impl);
-    return 0;
   }
 
   edgex_error e;
@@ -1242,12 +1233,15 @@ int main(int argc, char *argv[])
     };
 
   /* Initalise a new device service */
-  service = edgex_device_service_new(service_name,
+  service = edgex_device_service_new(params.svcname,
       VERSION, impl, opcuaImpls, &e);
   ERR_CHECK(e);
 
+  /* set the overwrite flag */
+  edgex_device_service_set_overwrite(service, params.overwrite);
+  
   /* Start the device service*/
-  edgex_device_service_start(service, regURL, profile, confdir, &e);
+  edgex_device_service_start (service, params.regURL, params.profile, params.confdir, &e);
   ERR_CHECK(e);
 
   signal(SIGINT, inthandler);
