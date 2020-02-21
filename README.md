@@ -16,7 +16,7 @@ Device service for OPC-UA protocol written in C.
 * A version of GCC supporting C11.
 * CMake version 3.1 or greater and make.
 * The EdgeX Device SDK for C, version 1.x.
-* The opensource library, open62541, version 0.3.1.
+* The opensource library, open62541, version 1.0.
 * An OPC-UA server.
 
 ## Building the open62541 Library
@@ -26,12 +26,12 @@ This step is not required if building the device service as a Docker container.
 The following steps can be used to build and install the opensource open62541
 library.  Installation of the open62541 library may require `sudo` privileges.
 
-Retrieve v0.3.1 of the open62541 library from the official archive at
+Retrieve v1.0 of the open62541 library from the official archive at
 `https://github.com/open62541/open62541`.  This archive will come in the form
 of a zipfile which should be unzipped into a suitable location.
 
 Once the open62541 codebase has been unzipped, the following commands may be run
-from the top level of the library (open62541-0.3.1):
+from the top level of the library (open62541-1.0):
 ```
    mkdir build
    cd build
